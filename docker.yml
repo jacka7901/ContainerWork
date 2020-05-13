@@ -1,0 +1,48 @@
+---
+- hosts: webservers
+  become: true
+  tasks:
+  - name: install system packages
+    apt:
+      name: "{{ item }}"
+      state: latest
+    loop: [ 'apt-transport-https', 'ca-certificates', 'curl', 'software-properties-common', 'gnupg-agent', 'python3-pip', 'virtualenv', 'python3-setuptools']
+
+  - name: install docker gpg apt key
+    apt_key:
+      url: https://download.docker.com/linux/ubuntu/gpg
+      state: present
+
+  - name: create docker repo
+    apt_repository:
+      repo: deb https://download.docker.com/linux/ubuntu bionic stable
+      state: present
+
+  - name: install docker-ce 
+    apt:
+      #update_cache: yes not working
+      name: docker-ce
+      state: latest
+
+  - name: install docker module for python
+    pip:
+      name: docker
+
+  - name: create docker group
+    group:
+      name: docker
+
+  - name: set group to docker 
+    user:
+      name: ansible
+      groups: docker
+      append: yes
+
+  - name: start docker deamon 
+    service:
+      name: docker
+      state: started
+
+  - name: test pull a docker image
+    docker_image:
+      name: ubuntu
